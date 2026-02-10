@@ -41,3 +41,66 @@ select * From Employee;
 Alter table Employee
 ADD constraint name 
 default 10000 for Salary;
+
+select name , dept_name from Student;
+
+select * from instructor where dept_name='CSE';
+
+select title from Course where dept_name='CSE' and credits=3;
+
+select t.course_id , c.title
+from Takes t , Course c
+where t.course_id=c.course_id
+and ID=12345;
+
+select name , salary from instructor where salary between 40000 and 90000;
+
+select ID from Instructor where ID not in( select ID from Teaches where id is not
+null);
+
+select s.name,c.title,t.year
+from Student s, Course c, Takes t , Section sec
+where  s.ID=t.ID
+AND    t.course_id=c.course_id
+And   t.course_id=sec.course_id
+and  sec.room_number=303;
+
+
+
+select s.name, c.course_id,c.title as c_name
+from Student s,Takes t, Course c 
+where s.ID=t.ID
+and c.course_id=t.course_id
+and t.year =2015;
+
+select name , salary as inst_salary from Instructor 
+where salary > some (select salary from
+Instructor where dept_name='CSE');
+
+select name from Instructor where dept_name Like '%ch%';
+
+select name , Length(name) from student;
+
+select dept_name , SUBStr(dept_name,3,3)
+from Department;
+
+select UPPER(name) from instructor;
+
+Select NVL(salary,0)
+from Instructor;
+
+SELECT salary , Round(salary/3,-2) from Instructor;
+
+SELECT
+TO_CHAR(DOB, 'DD-MON-YYYY'),
+TO_CHAR(DOB, 'DD-MON-YY'),
+TO_CHAR(DOB, 'DD-MM-YY')
+FROM Employee;
+
+
+SELECT EmpName,
+TO_CHAR(DOB, 'YEAR'),
+TO_CHAR(DOB, 'Year'),
+TO_CHAR(DOB, 'year')
+FROM Employee;
+
