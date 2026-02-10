@@ -1,0 +1,43 @@
+-- your code goes here
+create table department(
+DeptNo Number(5) Primary key,
+DeptName Varchar(30) unique,
+Location Varchar(40)
+);
+
+insert into department values(67,'CSE','AB5');
+insert into department values(69,'IT','AB4');
+
+select * from department;
+
+create table Employee(
+EmpNo Number(5) Primary key, 
+EmpName Varchar(40) Not null,
+Gender Char(1) NOT NULL check (Gender IN('M','F')),
+Salary Number(9) Not null,
+Address Varchar(30) Not null,
+DNo Number(5));
+
+
+Alter table Employee add constraint fk
+foreign key(DNo) references department(DeptNo);
+
+
+Insert into department values(5,'AIML','ab5');
+
+
+Insert into Employee values(101,'Arpit','M',9000000,'Manipal',5);
+
+Alter table Employee
+Drop constraint fk;
+--When a parent tuple is deleted, all corresponding child tuples referencing it are automatically deleted due to the ON DELETE CASCADE option, thereby maintaining referential integrity.
+Alter table Employee ADD constraint fk
+foreign key (DNo) references department(DeptNo)
+on delete CASCADE;
+
+delete from department where DeptNo=5;
+select * From Employee;
+
+Alter table Employee
+ADD constraint name 
+default 10000 for Salary;
