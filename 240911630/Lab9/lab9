@@ -1,0 +1,201 @@
+-- ============================================================
+-- PROCEDURES
+-- ============================================================
+
+-- Q1: Write a procedure to display a message “Good Day to You”.
+CREATE OR REPLACE PROCEDURE greet IS
+BEGIN
+    DBMS_OUTPUT.PUT_LINE('Good Day to You');
+END;
+/
+
+BEGIN
+    greet;
+END;
+/
+-- ------------------------------------------------------------
+
+-- Q2: Procedure which takes dept_name as input and lists instructors and courses.
+CREATE OR REPLACE PROCEDURE dept_info (p_dept VARCHAR2) IS
+BEGIN
+    DBMS_OUTPUT.PUT_LINE('Instructors in ' || p_dept || ':');
+    FOR rec IN (SELECT ID, name FROM instructor WHERE dept_name = p_dept) LOOP
+        DBMS_OUTPUT.PUT_LINE(rec.ID || ' ' || rec.name);
+    END LOOP;
+
+    DBMS_OUTPUT.PUT_LINE('Courses in ' || p_dept || ':');
+    FOR rec IN (SELECT course_id, title FROM course WHERE dept_name = p_dept) LOOP
+        DBMS_OUTPUT.PUT_LINE(rec.course_id || ' ' || rec.title);
+    END LOOP;
+END;
+/
+
+BEGIN
+    dept_info('&dept_name');
+END;
+/
+-- ------------------------------------------------------------
+
+-- Q3: Procedure course_popular to find most popular course in a department.
+CREATE OR REPLACE PROCEDURE course_popular (p_dept VARCHAR2) IS
+    v_course_id course.course_id%TYPE;
+    v_title course.title%TYPE;
+BEGIN
+    SELECT c.course_id, c.title
+    INTO v_course_id, v_title
+    FROM course c
+    JOIN takes t ON c.course_id = t.course_id
+    WHERE c.dept_name = p_dept
+    GROUP BY c.course_id, c.title
+    HAVING COUNT(t.ID) = (
+        SELECT MAX(COUNT(*))
+        FROM course c2
+        JOIN takes t2 ON c2.course_id = t2.course_id
+        WHERE c2.dept_name = p_dept
+        GROUP BY c2.course_id
+    );
+
+    DBMS_OUTPUT.PUT_LINE('Most popular course in ' || p_dept || ': ' ||
+                         v_course_id || ' ' || v_title);
+END;
+/
+
+BEGIN
+    FOR rec IN (SELECT DISTINCT dept_name FROM course) LOOP
+        course_popular(rec.dept_name);
+    END LOOP;
+END;
+/
+-- ------------------------------------------------------------
+
+-- Q4: Procedure to list students and courses of a department.
+CREATE OR REPLACE PROCEDURE dept_students_courses (p_dept VARCHAR2) IS
+BEGIN
+    DBMS_OUTPUT.PUT_LINE('Students in ' || p_dept || ':');
+    FOR rec IN (SELECT ID, name FROM student WHERE dept_name = p_dept) LOOP
+        DBMS_OUTPUT.PUT_LINE(rec.ID || ' ' || rec.name);
+    END LOOP;
+
+    DBMS_OUTPUT.PUT_LINE('Courses in ' || p_dept || ':');
+    FOR rec IN (SELECT course_id, title FROM course WHERE dept_name = p_dept) LOOP
+        DBMS_OUTPUT.PUT_LINE(rec.course_id || ' ' || rec.title);
+    END LOOP;
+END;
+/
+
+BEGIN
+    dept_students_courses('&dept_name');
+END;
+/
+-- ============================================================
+-- FUNCTIONS
+-- ============================================================
+
+-- Q5: Function to return square of a number.
+CREATE OR REPLACE FUNCTION square_num (p_num NUMBER)
+RETURN NUMBER IS
+BEGIN
+    RETURN p_num * p_num;
+END;
+/
+
+DECLARE
+    v_result NUMBER;
+BEGIN
+    v_result := square_num(5);
+    DBMS_OUTPUT.PUT_LINE('Square = ' || v_result);
+END;
+/
+-- ------------------------------------------------------------
+
+-- Q6: Function to return highest paid instructor in a department.
+CREATE OR REPLACE FUNCTION department_highest (p_dept VARCHAR2)
+RETURN VARCHAR2 IS
+    v_name instructor.name%TYPE;
+BEGIN
+    SELECT name
+    INTO v_name
+    FROM instructor
+    WHERE dept_name = p_dept
+      AND salary = (SELECT MAX(salary)
+                    FROM instructor
+                    WHERE dept_name = p_dept);
+
+    RETURN v_name;
+END;
+/
+
+BEGIN
+    FOR rec IN (SELECT DISTINCT dept_name FROM instructor) LOOP
+        DBMS_OUTPUT.PUT_LINE('Highest paid in ' || rec.dept_name || ': ' ||
+                             department_highest(rec.dept_name));
+    END LOOP;
+END;
+/
+-- ============================================================
+-- PACKAGES
+-- ============================================================
+
+-- Q7: Package with procedure and function.
+CREATE OR REPLACE PACKAGE dept_pkg IS
+    PROCEDURE list_instructors (p_dept VARCHAR2);
+    FUNCTION max_salary (p_dept VARCHAR2) RETURN NUMBER;
+END dept_pkg;
+/
+
+CREATE OR REPLACE PACKAGE BODY dept_pkg IS
+    PROCEDURE list_instructors (p_dept VARCHAR2) IS
+    BEGIN
+        FOR rec IN (SELECT name FROM instructor WHERE dept_name = p_dept) LOOP
+            DBMS_OUTPUT.PUT_LINE(rec.name);
+        END LOOP;
+    END;
+
+    FUNCTION max_salary (p_dept VARCHAR2) RETURN NUMBER IS
+        v_salary NUMBER;
+    BEGIN
+        SELECT MAX(salary)
+        INTO v_salary
+        FROM instructor
+        WHERE dept_name = p_dept;
+        RETURN v_salary;
+    END;
+END dept_pkg;
+/
+
+BEGIN
+    dept_pkg.list_instructors('&dept_name');
+    DBMS_OUTPUT.PUT_LINE('Max salary = ' || dept_pkg.max_salary('&dept_name'));
+END;
+/
+-- ============================================================
+-- PARAMETER MODES
+-- ============================================================
+
+-- Q8: Procedure with IN, OUT, IN OUT parameters for interest calculation.
+CREATE OR REPLACE PROCEDURE calc_interest (
+    p_principal IN NUMBER,
+    p_rate      IN NUMBER,
+    p_years     IN NUMBER,
+    p_simple    OUT NUMBER,
+    p_compound  OUT NUMBER,
+    p_total     IN OUT NUMBER
+) IS
+BEGIN
+    p_simple := (p_principal * p_rate * p_years) / 100;
+    p_compound := p_principal * POWER((1 + p_rate/100), p_years) - p_principal;
+    p_total := p_principal + p_simple + p_compound;
+END;
+/
+
+DECLARE
+    v_simple NUMBER;
+    v_compound NUMBER;
+    v_total NUMBER := 0;
+BEGIN
+    calc_interest(1000, 10, 2, v_simple, v_compound, v_total);
+    DBMS_OUTPUT.PUT_LINE('Simple Interest = ' || v_simple);
+    DBMS_OUTPUT.PUT_LINE('Compound Interest = ' || v_compound);
+    DBMS_OUTPUT.PUT_LINE('Total Sum = ' || v_total);
+END;
+/
